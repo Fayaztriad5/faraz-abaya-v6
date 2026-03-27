@@ -12,7 +12,7 @@ const Stars = ({ r }) => (
   </span>
 );
 
-export default function ProductCard({ p, onView }) {
+export default function ProductCard({ p, onView, prioritize = false }) {
   const [liked, setLiked] = useState(false);
   const [bc, tc] = BADGE_COLORS[p.badge] || ["#C9A84C", "#1C1C1E"];
   const { addItem, openCart } = useCart();
@@ -22,11 +22,25 @@ export default function ProductCard({ p, onView }) {
     openCart();
   };
 
+  const src = p.imgs[0];
+  const isUnsplash = typeof src === "string" && src.includes("images.unsplash.com/photo-");
+  const buildUnsplashSrc = (w) =>
+    `${src.split("?")[0]}?auto=format&fit=crop&crop=faces,entropy&w=${w}&h=${Math.round((w * 4) / 3)}&q=72`;
+
   return (
     <div className="card-hover" style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.07)" }}>
       {/* Image */}
       <div className="img-zoom" style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden" }}>
-        <img src={p.imgs[0]} alt={p.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <img
+          src={isUnsplash ? buildUnsplashSrc(420) : src}
+          srcSet={isUnsplash ? `${buildUnsplashSrc(320)} 320w, ${buildUnsplashSrc(420)} 420w, ${buildUnsplashSrc(640)} 640w` : undefined}
+          sizes="(max-width: 639px) 46vw, (max-width: 1099px) 30vw, 23vw"
+          alt={p.name}
+          loading={prioritize ? "eager" : "lazy"}
+          fetchPriority={prioritize ? "high" : "auto"}
+          decoding="async"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
         <span className="badge-pill" style={{ position: "absolute", top: 8, left: 8, background: bc, color: tc }}>{p.badge}</span>
         <button className="like-btn" onClick={() => setLiked(!liked)} aria-label="Wishlist">
           <span style={{ fontSize: 14 }}>{liked ? "❤️" : "🤍"}</span>
@@ -35,7 +49,7 @@ export default function ProductCard({ p, onView }) {
 
       {/* Info */}
       <div style={{ padding: "10px 12px 12px" }}>
-        <div style={{ fontSize: 9, color: "var(--gold)", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", fontFamily: "'Jost',sans-serif" }}>{p.category}</div>
+        <div style={{ fontSize: 10, color: "var(--gold-strong)", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", fontFamily: "'Jost',sans-serif" }}>{p.category}</div>
 
         <div className="font-display card-name" style={{ fontWeight: 600, color: "var(--charcoal)", marginTop: 2, lineHeight: 1.2 }}>{p.name}</div>
 
