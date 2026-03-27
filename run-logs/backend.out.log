@@ -1,0 +1,5 @@
+
+> faraz-abaya@1.0.0 server
+> node backend/server.js
+
+Orders API running on http://localhost:5000
