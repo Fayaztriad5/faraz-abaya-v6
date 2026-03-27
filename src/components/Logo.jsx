@@ -13,8 +13,9 @@ const Logo = ({ size = 40 }) => (
     }}
   >
     <img
-      src="https://res.cloudinary.com/djrikegql/image/upload/v1772435756/1772289183645_obsyhw.png"
+      src="https://res.cloudinary.com/djrikegql/image/upload/w_200,f_auto,q_auto/v1772435756/1772289183645_obsyhw.png"
       alt="Faraz Abaya Logo"
+      fetchpriority="high"
       style={{
         width: "80%",
         height: "80%",
