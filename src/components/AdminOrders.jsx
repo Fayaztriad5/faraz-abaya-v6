@@ -51,7 +51,7 @@ export default function AdminOrders({ onBack, onStore }) {
   return (
     <div style={{ minHeight: "100vh", background: "#F5F3F0" }}>
       <div style={{ background: "var(--charcoal)", position: "sticky", top: 0, zIndex: 40 }}>
-        <div className="admin-header" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 60 }}>
+        <div className="admin-header" style={{ maxWidth: 1440, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 60 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Logo size={36} />
             <div>
@@ -69,7 +69,7 @@ export default function AdminOrders({ onBack, onStore }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 20px" }}>
+      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 20px" }}>
         <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,.06)" }}>
           <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(201,168,76,.15)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <span className="font-display" style={{ fontSize: 20, fontWeight: 600, color: "var(--charcoal)" }}>Google Sheet Orders</span>
@@ -86,17 +86,6 @@ export default function AdminOrders({ onBack, onStore }) {
           ) : (
             <div className="orders-table-wrap">
               <table className="orders-table">
-                <colgroup>
-                  <col style={{ width: 140 }} />
-                  <col style={{ width: 140 }} />
-                  <col style={{ width: 140 }} />
-                  <col style={{ width: 210 }} />
-                  <col style={{ width: 230 }} />
-                  <col style={{ width: 170 }} />
-                  <col style={{ width: 100 }} />
-                  <col style={{ width: 110 }} />
-                  <col style={{ width: 80 }} />
-                </colgroup>
                 <thead>
                   <tr>
                     {["Date", "Name", "Phone", "Email", "Address", "Product", "Price", "Product ID", "Image"].map((h) => <th key={h}>{h}</th>)}
