@@ -547,9 +547,9 @@ const globalStyles = `
   .orders-table-wrap { overflow: auto; }
   .orders-table {
     width: 100%;
-    min-width: 1320px;
+    min-width: 1080px;
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto;
     font-family: 'Jost', sans-serif;
     font-size: 13px;
   }
