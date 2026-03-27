@@ -25,16 +25,16 @@ export default function ProductCard({ p, onView, prioritize = false }) {
   const src = p.imgs[0];
   const isUnsplash = typeof src === "string" && src.includes("images.unsplash.com/photo-");
   const buildUnsplashSrc = (w) =>
-    `${src.split("?")[0]}?auto=format&fit=crop&crop=faces,entropy&w=${w}&h=${Math.round((w * 4) / 3)}&q=72`;
+    `${src.split("?")[0]}?auto=format&fit=crop&crop=faces,entropy&w=${w}&h=${Math.round((w * 4) / 3)}&q=60`;
 
   return (
     <div className="card-hover" style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.07)" }}>
       {/* Image */}
       <div className="img-zoom" style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden" }}>
         <img
-          src={isUnsplash ? buildUnsplashSrc(420) : src}
-          srcSet={isUnsplash ? `${buildUnsplashSrc(320)} 320w, ${buildUnsplashSrc(420)} 420w, ${buildUnsplashSrc(640)} 640w` : undefined}
-          sizes="(max-width: 639px) 46vw, (max-width: 1099px) 30vw, 23vw"
+          src={isUnsplash ? buildUnsplashSrc(360) : src}
+          srcSet={isUnsplash ? `${buildUnsplashSrc(240)} 240w, ${buildUnsplashSrc(280)} 280w, ${buildUnsplashSrc(326)} 326w, ${buildUnsplashSrc(360)} 360w, ${buildUnsplashSrc(420)} 420w, ${buildUnsplashSrc(520)} 520w, ${buildUnsplashSrc(640)} 640w` : undefined}
+          sizes="(max-width: 639px) 46vw, (max-width: 1099px) 30vw, 22vw"
           alt={p.name}
           loading={prioritize ? "eager" : "lazy"}
           fetchPriority={prioritize ? "high" : "auto"}
