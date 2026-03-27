@@ -86,6 +86,17 @@ export default function AdminOrders({ onBack, onStore }) {
           ) : (
             <div className="orders-table-wrap">
               <table className="orders-table">
+                <colgroup>
+                  <col style={{ width: 140 }} />
+                  <col style={{ width: 140 }} />
+                  <col style={{ width: 140 }} />
+                  <col style={{ width: 210 }} />
+                  <col style={{ width: 230 }} />
+                  <col style={{ width: 170 }} />
+                  <col style={{ width: 100 }} />
+                  <col style={{ width: 110 }} />
+                  <col style={{ width: 80 }} />
+                </colgroup>
                 <thead>
                   <tr>
                     {["Date", "Name", "Phone", "Email", "Address", "Product", "Price", "Product ID", "Image"].map((h) => <th key={h}>{h}</th>)}
