@@ -118,8 +118,8 @@ function Home({ products, onView, cat, setCat, search }) {
         </div>
       ) : (
         <div className="product-grid">
-          {filtered.map((p) => (
-            <ProductCard key={p.id} p={p} onView={onView} />
+          {filtered.map((p, index) => (
+            <ProductCard key={p.id} p={p} onView={onView} prioritize={!search && cat === "All" && (p.name === "Nida Pearl Abaya" || index === 0)} />
           ))}
         </div>
       )}
@@ -189,7 +189,7 @@ function Footer({ onNav }) {
         <div style={{ height: 1, background: "linear-gradient(90deg,transparent,var(--gold),transparent)", margin: "0 0 18px" }} />
 
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ fontFamily: "'Jost',sans-serif", fontSize: 12 }}>© 2025 Faraz Abaya. All rights reserved.</div>
+          <div style={{ fontFamily: "'Jost',sans-serif", fontSize: 12 }}>ï¿½ 2025 Faraz Abaya. All rights reserved.</div>
           <div style={{ fontFamily: "'Jost',sans-serif", fontSize: 12, color: "var(--gold)" }}>Made with care for modest fashion</div>
         </div>
       </div>
