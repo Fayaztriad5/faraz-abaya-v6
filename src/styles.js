@@ -547,8 +547,9 @@ const globalStyles = `
   .orders-table-wrap { overflow: auto; }
   .orders-table {
     width: 100%;
-    min-width: 980px;
+    min-width: 1320px;
     border-collapse: collapse;
+    table-layout: fixed;
     font-family: 'Jost', sans-serif;
     font-size: 13px;
   }
@@ -567,6 +568,7 @@ const globalStyles = `
     padding: 12px 14px;
     border-top: 1px solid rgba(201,168,76,.12);
     vertical-align: middle;
+    overflow-wrap: anywhere;
   }
   .order-thumb {
     width: 48px;
