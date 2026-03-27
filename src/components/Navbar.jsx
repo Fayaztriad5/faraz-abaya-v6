@@ -127,7 +127,7 @@ export default function Navbar({ onNav, search, setSearch, cat, setCat }) {
               Cart
               <span className="cart-count">{totalQty}</span>
             </button>
-            <button onClick={() => onNav("admin")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost',sans-serif", fontSize: 13, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5 }}>
+            <button onClick={() => onNav("admin")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost',sans-serif", fontSize: 13, color: "var(--charcoal)", display: "flex", alignItems: "center", gap: 5 }}>
               🛡 Admin
             </button>
           </div>
@@ -168,7 +168,7 @@ export default function Navbar({ onNav, search, setSearch, cat, setCat }) {
 
         {/* Admin link */}
         <button onClick={() => { onNav("admin"); closeMobile(); }}
-          style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost',sans-serif", fontSize: 14, color: "var(--text-muted)", padding: "6px 0" }}>
+          style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost',sans-serif", fontSize: 14, color: "var(--charcoal)", padding: "6px 0" }}>
           🛡 Admin Panel
         </button>
       </div>
