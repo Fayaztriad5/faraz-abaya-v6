@@ -1,13 +1,12 @@
 const globalStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
-
   :root {
     --gold: #C9A84C;
+    --gold-strong: #7A5A10;
     --gold-light: #E8C96A;
     --charcoal: #1C1C1E;
     --pearl: #FAF8F5;
     --pearl-dark: #F0EDE8;
-    --text-muted: #8A8A8E;
+    --text-muted: #5F6368;
     --navbar-h: 60px;
   }
 
@@ -318,13 +317,13 @@ const globalStyles = `
   @media (hover:hover) { .btn-gold:hover { transform:translateY(-2px); } }
   .btn-outline {
     background: transparent;
-    color: var(--gold);
-    border: 1.5px solid var(--gold);
+    color: var(--charcoal);
+    border: 1.5px solid #9f8333;
     cursor: pointer;
     transition: all .3s;
     min-height: 44px;
   }
-  @media (hover:hover) { .btn-outline:hover { background:var(--gold); color:var(--charcoal); } }
+  @media (hover:hover) { .btn-outline:hover { background:#9f8333; color:#fff; } }
 
   /* Cart */
   .cart-btn { position: relative; }
