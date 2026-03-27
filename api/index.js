@@ -52,6 +52,11 @@ function verifyAdminPassword(password) {
 }
 
 function readSecurityConfig() {
+  // On Vercel, prefer ADMIN_2FA_SECRET env var — /tmp is not shared across cold starts.
+  const envSecret = (process.env.ADMIN_2FA_SECRET || "").trim();
+  if (envSecret) {
+    return { enabled: true, secret: envSecret, enabledAt: null };
+  }
   try {
     if (!fs.existsSync(SECURITY_FILE)) return { enabled: false, secret: "" };
     const parsed = JSON.parse(fs.readFileSync(SECURITY_FILE, "utf8"));
@@ -67,6 +72,9 @@ function readSecurityConfig() {
 
 function writeSecurityConfig(next) {
   fs.writeFileSync(SECURITY_FILE, JSON.stringify(next, null, 2));
+  // On Vercel this file won't survive the next cold start.
+  // Copy the value from Vercel Runtime Logs and add it as env var ADMIN_2FA_SECRET.
+  console.log("[2FA-SETUP] ADMIN_2FA_SECRET =", next.secret);
 }
 
 function loadServiceAccount() {
