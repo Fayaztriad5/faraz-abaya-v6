@@ -26,7 +26,7 @@ export default function ProductCard({ p, onView }) {
     <div className="card-hover" style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.07)" }}>
       {/* Image */}
       <div className="img-zoom" style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden" }}>
-        <img src={p.imgs[0]} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <img src={p.imgs[0]} alt={p.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         <span className="badge-pill" style={{ position: "absolute", top: 8, left: 8, background: bc, color: tc }}>{p.badge}</span>
         <button className="like-btn" onClick={() => setLiked(!liked)} aria-label="Wishlist">
           <span style={{ fontSize: 14 }}>{liked ? "❤️" : "🤍"}</span>
