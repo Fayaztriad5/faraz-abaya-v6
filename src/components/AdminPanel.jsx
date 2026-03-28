@@ -3,6 +3,8 @@ import { CATS, BADGE_COLORS } from "../mockData";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 
+const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+
 const Stars = ({ r }) => (
   <span style={{ display: "flex", gap: 2, alignItems: "center" }}>
     {[1, 2, 3, 4, 5].map((i) => (
@@ -33,6 +35,7 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
   const [editing, setEditing] = useState(null);
   const [delConfirm, setDelConfirm] = useState(null);
   const [toast, setToast] = useState("");
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", category: "Daily Wear", price: "", fabric: "", desc: "", imgUrl: "", badge: "New" });
 
   useEffect(() => {
@@ -61,8 +64,10 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
     setShowForm(true);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!form.name || !form.price) return;
+    if (saving) return;
+
     const data = {
       name: form.name,
       category: form.category,
@@ -74,21 +79,48 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
       reviews: 0,
       imgs: [form.imgUrl || "https://images.unsplash.com/photo-1594938298603-c8148c4b2a4e?w=600&q=80"],
     };
-
-    if (editing) {
-      setProducts((p) => p.map((x) => (x.id === editing.id ? { ...x, ...data } : x)));
-      showToast("Product updated.");
-    } else {
-      setProducts((p) => [...p, { ...data, id: Date.now() }]);
-      showToast("Product added.");
+    setSaving(true);
+    try {
+      if (editing) {
+        const res = await fetch(`${API_BASE}/api/products/${editing.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.ok || !body.product) throw new Error(body.error || "Failed to update product.");
+        setProducts((p) => p.map((x) => (x.id === editing.id ? body.product : x)));
+        showToast("Product updated.");
+      } else {
+        const res = await fetch(`${API_BASE}/api/products`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.ok || !body.product) throw new Error(body.error || "Failed to add product.");
+        setProducts((p) => [...p, body.product]);
+        showToast("Product added.");
+      }
+      setShowForm(false);
+    } catch (error) {
+      showToast(error?.message || "Failed to save product.");
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
   };
 
-  const del = (id) => {
-    setProducts((p) => p.filter((x) => x.id !== id));
-    setDelConfirm(null);
-    showToast("Product deleted.");
+  const del = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/products/${id}`, { method: "DELETE" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) throw new Error(body.error || "Failed to delete product.");
+      setProducts((p) => p.filter((x) => x.id !== id));
+      setDelConfirm(null);
+      showToast("Product deleted.");
+    } catch (error) {
+      showToast(error?.message || "Failed to delete product.");
+    }
   };
 
   const avgPrice = products.length ? Math.round(products.reduce((a, p) => a + p.price, 0) / products.length) : 0;
@@ -240,7 +272,7 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
             </div>
             <div style={{ padding: "0 22px 22px", display: "flex", gap: 10 }}>
               <button className="btn-outline" onClick={() => setShowForm(false)} style={{ flex: 1, padding: 13, borderRadius: 14, fontFamily: "'Jost',sans-serif", fontSize: 14 }}>Cancel</button>
-              <button className="btn-gold" onClick={save} style={{ flex: 1, padding: 13, borderRadius: 14, fontFamily: "'Jost',sans-serif", fontSize: 14 }}>{editing ? "Save Changes" : "Add Product"}</button>
+              <button className="btn-gold" onClick={save} disabled={saving} style={{ flex: 1, padding: 13, borderRadius: 14, fontFamily: "'Jost',sans-serif", fontSize: 14, opacity: saving ? 0.7 : 1, cursor: saving ? "not-allowed" : "pointer" }}>{saving ? "Saving..." : editing ? "Save Changes" : "Add Product"}</button>
             </div>
           </div>
         </div>
