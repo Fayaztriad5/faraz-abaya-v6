@@ -3,7 +3,7 @@ import { CATS, BADGE_COLORS } from "../mockData";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+const API_BASE = (process.env.REACT_APP_API_BASE_URL || "").trim();
 
 const Stars = ({ r }) => (
   <span style={{ display: "flex", gap: 2, alignItems: "center" }}>
@@ -29,14 +29,26 @@ const RowActionIcon = ({ kind }) => {
   return <svg viewBox="0 0 24 24" fill="currentColor" style={style}><path d="M9 3a2 2 0 0 0-2 2v1H4a1 1 0 1 0 0 2h1l1 11a3 3 0 0 0 2.99 2.73h6.02A3 3 0 0 0 18 19L19 8h1a1 1 0 1 0 0-2h-3V5a2 2 0 0 0-2-2H9zm0 3V5h6v1H9zm1.5 4a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0v-6a1 1 0 0 1 1-1zm4 0a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0v-6a1 1 0 0 1 1-1z" /></svg>;
 };
 
-export default function AdminPanel({ products, setProducts, onBack, onOrders }) {
+export default function AdminPanel({ products, loading = false, setProducts, page = 1, totalPages = 1, onPageChange = () => {}, onBack, onOrders }) {
   const { logout } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [delConfirm, setDelConfirm] = useState(null);
   const [toast, setToast] = useState("");
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", category: "Daily Wear", price: "", fabric: "", desc: "", imgUrl: "", badge: "New" });
+  const [form, setForm] = useState({
+    name: "",
+    category: "Daily Wear",
+    price: "",
+    fabric: "",
+    desc: "",
+    imgUrl1: "",
+    imgUrl2: "",
+    imgUrl3: "",
+    imgUrl4: "",
+    stockOut: false,
+    badge: "New",
+  });
 
   useEffect(() => {
     if (!showForm && !delConfirm) return undefined;
@@ -54,13 +66,39 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: "", category: "Daily Wear", price: "", fabric: "", desc: "", imgUrl: "", badge: "New" });
+    setForm({
+      name: "",
+      category: "Daily Wear",
+      price: "",
+      fabric: "",
+      desc: "",
+      imgUrl1: "",
+      imgUrl2: "",
+      imgUrl3: "",
+      imgUrl4: "",
+      stockOut: false,
+      badge: "New",
+    });
     setShowForm(true);
   };
 
   const openEdit = (p) => {
     setEditing(p);
-    setForm({ name: p.name, category: p.category, price: p.price, fabric: p.fabric, desc: p.desc, imgUrl: p.imgs[0], badge: p.badge });
+    const imgs = Array.isArray(p.imgs) ? p.imgs : [];
+    const main = imgs[0] || "https://images.unsplash.com/photo-1594938298603-c8148c4b2a4e?w=600&q=80";
+    setForm({
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      fabric: p.fabric,
+      desc: p.desc,
+      imgUrl1: imgs[0] || main,
+      imgUrl2: imgs[1] || "",
+      imgUrl3: imgs[2] || "",
+      imgUrl4: imgs[3] || "",
+      stockOut: Boolean(p.stockOut),
+      badge: p.badge,
+    });
     setShowForm(true);
   };
 
@@ -68,6 +106,11 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
     if (!form.name || !form.price) return;
     if (saving) return;
 
+    const mainImage = (form.imgUrl1 || "").trim() || "https://images.unsplash.com/photo-1594938298603-c8148c4b2a4e?w=600&q=80";
+    const optionalImages = [form.imgUrl2, form.imgUrl3, form.imgUrl4]
+      .map((url) => String(url || "").trim())
+      .filter((url) => Boolean(url) && url !== mainImage);
+    const uniqueOptionalImages = [...new Set(optionalImages)];
     const data = {
       name: form.name,
       category: form.category,
@@ -75,9 +118,10 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
       fabric: form.fabric,
       desc: form.desc,
       badge: form.badge,
+      stockOut: Boolean(form.stockOut),
       rating: 4.8,
       reviews: 0,
-      imgs: [form.imgUrl || "https://images.unsplash.com/photo-1594938298603-c8148c4b2a4e?w=600&q=80"],
+      imgs: [mainImage, ...uniqueOptionalImages],
     };
     setSaving(true);
     try {
@@ -184,13 +228,22 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
             <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--pearl-dark)" }}>
-                  {["Product", "Category", "Price", "Fabric", "Rating", "Actions"].map((h) => (
+                  {["Product", "Category", "Price", "Fabric", "Stock", "Rating", "Actions"].map((h) => (
                     <th key={h} style={{ textAlign: "left", padding: "10px 18px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-muted)", fontFamily: "'Jost',sans-serif" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {products.map((p, i) => (
+                {loading && (
+                  Array.from({ length: 5 }).map((_, idx) => (
+                    <tr key={`loading-${idx}`} style={{ borderBottom: "1px solid rgba(201,168,76,.08)" }}>
+                      <td colSpan={7} style={{ padding: "14px 18px" }}>
+                        <div className="fa-skeleton" style={{ height: 36, borderRadius: 10 }} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {!loading && products.map((p, i) => (
                   <tr key={p.id} className="admin-row" style={{ borderBottom: "1px solid rgba(201,168,76,.08)", background: i % 2 ? "rgba(250,248,245,.5)" : "#fff" }}>
                     <td data-label="Product" style={{ padding: "14px 18px" }}>
                       <div className="admin-product-cell" style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -208,6 +261,11 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
                       </span>
                     </td>
                     <td data-label="Fabric" style={{ padding: "14px 18px", fontFamily: "'Jost',sans-serif", fontSize: 13, color: "var(--text-muted)" }}>{p.fabric}</td>
+                    <td data-label="Stock" style={{ padding: "14px 18px", fontFamily: "'Jost',sans-serif", fontSize: 12 }}>
+                      <span style={{ padding: "4px 8px", borderRadius: 999, background: p.stockOut ? "#FFF5F5" : "#F0FFF4", color: p.stockOut ? "#C53030" : "#2F855A", border: `1px solid ${p.stockOut ? "#FEB2B2" : "#9AE6B4"}` }}>
+                        {p.stockOut ? "Stock Out" : "In Stock"}
+                      </span>
+                    </td>
                     <td data-label="Rating" style={{ padding: "14px 18px" }}><div style={{ display: "flex", alignItems: "center", gap: 5 }}><Stars r={p.rating} /><span style={{ fontSize: 12, fontFamily: "'Jost',sans-serif" }}>{p.rating}</span></div></td>
                     <td data-label="Actions" style={{ padding: "14px 18px" }}>
                       <div className="admin-actions-cell" style={{ display: "flex", gap: 8 }}>
@@ -225,6 +283,19 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
             </table>
           </div>
         </div>
+        {totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <button className="btn-outline" onClick={() => onPageChange(page - 1)} disabled={page <= 1} style={{ opacity: page <= 1 ? 0.5 : 1 }}>
+              Prev
+            </button>
+            <span style={{ fontFamily: "'Jost',sans-serif", fontSize: 13, color: "var(--text-muted)" }}>
+              Page {page} / {totalPages}
+            </span>
+            <button className="btn-outline" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} style={{ opacity: page >= totalPages ? 0.5 : 1 }}>
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {showForm && (
@@ -235,7 +306,7 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
               <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--text-muted)" }}>&times;</button>
             </div>
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
-              {[["Product Name *", "name", "text", "e.g., Nida Pearl Abaya"], ["Price (\u20B9) *", "price", "number", "e.g., 1999"], ["Fabric", "fabric", "text", "e.g., Premium Nida"], ["Image URL", "imgUrl", "text", "https://..."]].map(([lbl, key, type, ph]) => (
+              {[["Product Name *", "name", "text", "e.g., Nida Pearl Abaya"], ["Price (\u20B9) *", "price", "number", "e.g., 1999"], ["Fabric", "fabric", "text", "e.g., Premium Nida"]].map(([lbl, key, type, ph]) => (
                 <div key={key}>
                   <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--charcoal)", fontFamily: "'Jost',sans-serif", display: "block", marginBottom: 6 }}>{lbl}</label>
                   <input
@@ -243,6 +314,18 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
                     value={form[key]}
                     onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                     placeholder={ph}
+                    style={{ width: "100%", padding: "11px 15px", borderRadius: 12, border: "1.5px solid rgba(201,168,76,.3)", fontFamily: "'Jost',sans-serif", fontSize: 13 }}
+                  />
+                </div>
+              ))}
+              {[["Main Image URL *", "imgUrl1"], ["Relevant Image URL 2", "imgUrl2"], ["Relevant Image URL 3", "imgUrl3"], ["Relevant Image URL 4", "imgUrl4"]].map(([lbl, key]) => (
+                <div key={key}>
+                  <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--charcoal)", fontFamily: "'Jost',sans-serif", display: "block", marginBottom: 6 }}>{lbl}</label>
+                  <input
+                    type="text"
+                    value={form[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    placeholder="https://..."
                     style={{ width: "100%", padding: "11px 15px", borderRadius: 12, border: "1.5px solid rgba(201,168,76,.3)", fontFamily: "'Jost',sans-serif", fontSize: 13 }}
                   />
                 </div>
@@ -259,6 +342,17 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
                   </select>
                 </div>
               ))}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--charcoal)", fontFamily: "'Jost',sans-serif", display: "block", marginBottom: 6 }}>Stock Status</label>
+                <select
+                  value={form.stockOut ? "out" : "in"}
+                  onChange={(e) => setForm((f) => ({ ...f, stockOut: e.target.value === "out" }))}
+                  style={{ width: "100%", padding: "11px 15px", borderRadius: 12, border: "1.5px solid rgba(201,168,76,.3)", fontFamily: "'Jost',sans-serif", fontSize: 13 }}
+                >
+                  <option value="in">In Stock</option>
+                  <option value="out">Stock Out</option>
+                </select>
+              </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--charcoal)", fontFamily: "'Jost',sans-serif", display: "block", marginBottom: 6 }}>Description</label>
                 <textarea
@@ -300,3 +394,4 @@ export default function AdminPanel({ products, setProducts, onBack, onOrders }) 
     </div>
   );
 }
+
