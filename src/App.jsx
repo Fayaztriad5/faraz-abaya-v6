@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProductCard from "./components/ProductCard";
