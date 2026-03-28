@@ -11,9 +11,20 @@ import CartSummary from "./components/CartSummary";
 import Hero from "./components/Hero";
 import Logo from "./components/Logo";
 import globalStyles from "./styles";
-import { INITIAL_PRODUCTS, CATS, WHATSAPP } from "./mockData";
+import { CATS, WHATSAPP } from "./mockData";
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+const API_BASE = (process.env.REACT_APP_API_BASE_URL || "").trim();
+const SKELETON_STYLES = `
+@keyframes faShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.fa-skeleton {
+  background: linear-gradient(90deg, #f2f2f2 25%, #e9e9e9 37%, #f2f2f2 63%);
+  background-size: 400% 100%;
+  animation: faShimmer 1.2s ease-in-out infinite;
+}
+`;
 
 
 const WaIcon = ({ size = 20, color = "white" }) => (
@@ -72,7 +83,7 @@ const FeatureIcon = ({ kind }) => {
   );
 };
 
-function Home({ products, onView, cat, setCat, search }) {
+function Home({ products, loading, onView, cat, setCat, search, page, totalPages, onPageChange }) {
   const filtered = products.filter(
     (p) =>
       (cat === "All" || p.category === cat) &&
@@ -109,7 +120,22 @@ function Home({ products, onView, cat, setCat, search }) {
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="product-grid">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
+              <div className="fa-skeleton" style={{ aspectRatio: "3/4" }} />
+              <div style={{ padding: 12 }}>
+                <div className="fa-skeleton" style={{ height: 12, width: "45%", borderRadius: 6, marginBottom: 8 }} />
+                <div className="fa-skeleton" style={{ height: 18, width: "70%", borderRadius: 7, marginBottom: 10 }} />
+                <div className="fa-skeleton" style={{ height: 14, width: "35%", borderRadius: 6, marginBottom: 12 }} />
+                <div className="fa-skeleton" style={{ height: 38, width: "100%", borderRadius: 12, marginBottom: 8 }} />
+                <div className="fa-skeleton" style={{ height: 38, width: "100%", borderRadius: 12 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0" }}>
           <div style={{ fontSize: 44 }}>-</div>
           <div className="font-display" style={{ fontSize: 22, marginTop: 12, color: "var(--charcoal)" }}>
@@ -120,11 +146,26 @@ function Home({ products, onView, cat, setCat, search }) {
           </div>
         </div>
       ) : (
-        <div className="product-grid">
-          {filtered.map((p, index) => (
-            <ProductCard key={p.id} p={p} onView={onView} prioritize={!search && cat === "All" && (p.name === "Nida Pearl Abaya" || index === 0)} />
-          ))}
-        </div>
+        <>
+          <div className="product-grid">
+            {filtered.map((p, index) => (
+              <ProductCard key={p.id} p={p} onView={onView} prioritize={!search && cat === "All" && (p.name === "Nida Pearl Abaya" || index === 0)} />
+            ))}
+          </div>
+          {!search && totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 20 }}>
+              <button className="btn-outline" onClick={() => onPageChange(page - 1)} disabled={page <= 1} style={{ opacity: page <= 1 ? 0.5 : 1 }}>
+                Prev
+              </button>
+              <span style={{ fontFamily: "'Jost',sans-serif", fontSize: 13, color: "var(--text-muted)" }}>
+                Page {page} / {totalPages}
+              </span>
+              <button className="btn-outline" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} style={{ opacity: page >= totalPages ? 0.5 : 1 }}>
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       <div className="features-grid">
@@ -201,7 +242,10 @@ function Footer({ onNav }) {
 }
 
 export default function App() {
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsPage, setProductsPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cat, setCat] = useState("All");
   const [search, setSearch] = useState("");
@@ -211,20 +255,25 @@ export default function App() {
   useEffect(() => {
     let active = true;
     const loadProducts = async () => {
+      setProductsLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/products`);
+        const res = await fetch(`${API_BASE}/api/products?page=${productsPage}&pageSize=20`);
         const data = await res.json().catch(() => ({}));
         if (!active || !res.ok || !data.ok || !Array.isArray(data.products)) return;
-        if (data.products.length > 0) setProducts(data.products);
+        setProducts(data.products);
+        setTotalPages(Number(data.totalPages || 1));
       } catch {
-        // Keep initial catalog when API is unavailable.
+        setProducts([]);
+        setTotalPages(1);
+      } finally {
+        if (active) setProductsLoading(false);
       }
     };
     loadProducts();
     return () => {
       active = false;
     };
-  }, []);
+  }, [productsPage]);
 
   const nav = (to) => {
     if (to === "home") navigate("/");
@@ -244,6 +293,22 @@ export default function App() {
     const productFromState = selectedProduct && String(selectedProduct.id) === id ? selectedProduct : null;
     const productFromList = products.find((item) => String(item.id) === id);
     const product = productFromState || productFromList;
+    if (productsLoading && !product) {
+      return (
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px 60px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 26 }}>
+            <div className="fa-skeleton" style={{ borderRadius: 18, aspectRatio: "3/4" }} />
+            <div>
+              <div className="fa-skeleton" style={{ width: 120, height: 12, borderRadius: 6, marginBottom: 12 }} />
+              <div className="fa-skeleton" style={{ width: "70%", height: 28, borderRadius: 8, marginBottom: 14 }} />
+              <div className="fa-skeleton" style={{ width: 100, height: 30, borderRadius: 8, marginBottom: 14 }} />
+              <div className="fa-skeleton" style={{ width: "100%", height: 42, borderRadius: 12, marginBottom: 10 }} />
+              <div className="fa-skeleton" style={{ width: "100%", height: 42, borderRadius: 12 }} />
+            </div>
+          </div>
+        </div>
+      );
+    }
     if (!product) {
       return (
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 16px" }}>
@@ -263,21 +328,21 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--pearl)" }}>
-      <style>{globalStyles}</style>
+      <style>{globalStyles + SKELETON_STYLES}</style>
       {!hideChrome && (
         <Navbar onNav={nav} search={search} setSearch={setSearch} cat={cat} setCat={setCat} />
       )}
 
       <main style={{ minHeight: "70vh" }}>
         <Routes>
-          <Route path="/" element={<Home products={products} onView={viewProduct} cat={cat} setCat={setCat} search={search} />} />
+          <Route path="/" element={<Home products={products} loading={productsLoading} onView={viewProduct} cat={cat} setCat={setCat} search={search} page={productsPage} totalPages={totalPages} onPageChange={setProductsPage} />} />
           <Route path="/product/:id" element={<ProductDetailRoute />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/admin"
             element={(
               <ProtectedRoute>
-                <AdminPanel products={products} setProducts={setProducts} onBack={() => nav("home")} onOrders={() => nav("adminOrders")} />
+                <AdminPanel products={products} loading={productsLoading} setProducts={setProducts} page={productsPage} totalPages={totalPages} onPageChange={setProductsPage} onBack={() => nav("home")} onOrders={() => nav("adminOrders")} />
               </ProtectedRoute>
             )}
           />
@@ -289,7 +354,7 @@ export default function App() {
               </ProtectedRoute>
             )}
           />
-          <Route path="*" element={<Home products={products} onView={viewProduct} cat={cat} setCat={setCat} search={search} />} />
+          <Route path="*" element={<Home products={products} loading={productsLoading} onView={viewProduct} cat={cat} setCat={setCat} search={search} page={productsPage} totalPages={totalPages} onPageChange={setProductsPage} />} />
         </Routes>
       </main>
 
@@ -307,6 +372,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 
