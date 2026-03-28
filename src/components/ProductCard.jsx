@@ -18,6 +18,7 @@ export default function ProductCard({ p, onView, prioritize = false }) {
   const { addItem, openCart } = useCart();
 
   const addToCart = () => {
+    if (p.stockOut) return;
     addItem(p);
     openCart();
   };
@@ -39,9 +40,19 @@ export default function ProductCard({ p, onView, prioritize = false }) {
           loading={prioritize ? "eager" : "lazy"}
           fetchPriority={prioritize ? "high" : "auto"}
           decoding="async"
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: p.stockOut ? "grayscale(25%)" : "none", opacity: p.stockOut ? 0.88 : 1 }}
         />
+        {p.stockOut && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.18)" }} />
+        )}
         <span className="badge-pill" style={{ position: "absolute", top: 8, left: 8, background: bc, color: tc }}>{p.badge}</span>
+        {p.stockOut && (
+          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
+            <span style={{ background: "rgba(155,28,28,.92)", color: "#fff", fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 999, fontFamily: "'Jost',sans-serif", letterSpacing: "0.08em", textTransform: "uppercase", boxShadow: "0 6px 16px rgba(0,0,0,.2)" }}>
+              Stock Out
+            </span>
+          </div>
+        )}
         <button className="like-btn" onClick={() => setLiked(!liked)} aria-label="Wishlist">
           <span style={{ fontSize: 14 }}>{liked ? "❤️" : "🤍"}</span>
         </button>
@@ -71,8 +82,8 @@ export default function ProductCard({ p, onView, prioritize = false }) {
           <button className="btn-gold btn-card-view" onClick={() => onView(p)}>
             View Details
           </button>
-          <button className="btn-outline btn-card-view" onClick={addToCart}>
-            Add to Cart
+          <button className="btn-outline btn-card-view" onClick={addToCart} disabled={p.stockOut} style={{ opacity: p.stockOut ? 0.6 : 1, cursor: p.stockOut ? "not-allowed" : "pointer" }}>
+            {p.stockOut ? "Out of Stock" : "Add to Cart"}
           </button>
         </div>
       </div>
