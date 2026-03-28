@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useEffect, useState } from "react";
 import { WHATSAPP } from "../mockData";
 import { useCart } from "../context/CartContext";
 import OrderDetailsModal from "./OrderDetailsModal";
@@ -24,12 +24,23 @@ const WaIcon = ({ size = 20, color = "white" }) => (
 
 export default function ProductDetail({ p, onBack }) {
   const [size, setSize] = useState("");
-  const [img, setImg] = useState(0);
+  const [activeImg, setActiveImg] = useState("");
   const [err, setErr] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
   const { addItem, openCart } = useCart();
+
+  const fallbackImage = "https://images.unsplash.com/photo-1594938298603-c8148c4b2a4e?w=600&q=80";
+  const rawImages = Array.isArray(p?.imgs) ? p.imgs.filter(Boolean) : [];
+  const dedupedImages = [...new Set(rawImages)];
+  const mainImage = dedupedImages[0] || fallbackImage;
+  const relevantImages = dedupedImages.slice(1);
+  const displayImage = activeImg || mainImage;
+
+  useEffect(() => {
+    setActiveImg(mainImage);
+  }, [mainImage, p?.id]);
 
   if (!p) {
     return (
@@ -45,6 +56,7 @@ export default function ProductDetail({ p, onBack }) {
   }
 
   function order() {
+    if (p.stockOut) return;
     if (!size) {
       setErr(true);
       setTimeout(() => setErr(false), 2500);
@@ -62,7 +74,7 @@ export default function ProductDetail({ p, onBack }) {
         id: `${p.id}`,
         name: `${p.name}${size ? ` (Size: ${size})` : ""}`,
         price: p.price,
-        imageUrl: p.imgs[img],
+        imageUrl: displayImage,
       };
 
       await saveOrderToSheet({ customer, items: [orderItem] });
@@ -78,12 +90,13 @@ export default function ProductDetail({ p, onBack }) {
   }
 
   function addToCart() {
+    if (p.stockOut) return;
     if (!size) {
       setErr(true);
       setTimeout(() => setErr(false), 2500);
       return;
     }
-    addItem(p, size, p.imgs[img]);
+    addItem(p, size, displayImage);
     openCart();
   }
 
@@ -96,20 +109,38 @@ export default function ProductDetail({ p, onBack }) {
       <div className="detail-grid">
         <div>
           <div style={{ borderRadius: 18, overflow: "hidden", aspectRatio: "3/4", marginBottom: 10 }}>
-            <img src={p.imgs[img]} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "all .5s" }} />
+            <img src={displayImage} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "all .5s", filter: p.stockOut ? "grayscale(20%) blur(1.2px)" : "none", opacity: p.stockOut ? 0.78 : 1 }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, padding: 8, border: "1px solid rgba(201,168,76,.2)", borderRadius: 12, background: "#fff" }}>
-            {p.imgs.map((src, i) => (
-              <div key={i} className={`thumb ${img === i ? "active" : ""}`} onClick={() => setImg(i)} style={{ aspectRatio: "3/4", minHeight: 82 }}>
-                <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+
+          {relevantImages.length === 1 && (
+            <div style={{ marginTop: 8 }}>
+              <div className={`thumb ${displayImage === relevantImages[0] ? "active" : ""}`} onClick={() => setActiveImg(relevantImages[0])} style={{ width: 84, height: 108, overflow: "hidden", borderRadius: 10 }}>
+                <img src={relevantImages[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {relevantImages.length > 1 && (
+            <div style={{ display: "inline-grid", gridTemplateColumns: `repeat(${Math.min(relevantImages.length, 3)}, minmax(120px, 160px))`, gap: 8, padding: 8, border: "1px solid rgba(201,168,76,.2)", borderRadius: 14, background: "#fff" }}>
+              {relevantImages.map((src, i) => (
+                <div key={i} className={`thumb ${displayImage === src ? "active" : ""}`} onClick={() => setActiveImg(src)} style={{ aspectRatio: "3/4", minHeight: 120, overflow: "hidden", borderRadius: 10 }}>
+                  <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
           <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "'Jost',sans-serif" }}>{p.category}</div>
           <div className="font-display detail-title" style={{ fontWeight: 600, color: "var(--charcoal)", lineHeight: 1.15, margin: "6px 0 10px" }}>{p.name}</div>
+          {p.stockOut && (
+            <div style={{ marginBottom: 10 }}>
+              <span style={{ background: "#9B1C1C", color: "#fff", borderRadius: 999, padding: "5px 10px", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", fontFamily: "'Jost',sans-serif" }}>
+                Stock Out
+              </span>
+            </div>
+          )}
 
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <Stars r={p.rating} />
@@ -156,11 +187,11 @@ export default function ProductDetail({ p, onBack }) {
 
           <div className="detail-cta-wrap">
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button className="btn-wa" onClick={order} style={{ width: "100%", padding: "14px 16px", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 15, fontFamily: "'Jost',sans-serif", fontWeight: 600 }}>
-                <WaIcon size={20} /> Order via WhatsApp
+              <button className="btn-wa" onClick={order} disabled={p.stockOut} style={{ width: "100%", padding: "14px 16px", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 15, fontFamily: "'Jost',sans-serif", fontWeight: 600, opacity: p.stockOut ? 0.6 : 1, cursor: p.stockOut ? "not-allowed" : "pointer" }}>
+                <WaIcon size={20} /> {p.stockOut ? "Out of Stock" : "Order via WhatsApp"}
               </button>
-              <button className="btn-outline" onClick={addToCart} style={{ width: "100%", padding: 13, borderRadius: 18, fontSize: 14, fontFamily: "'Jost',sans-serif" }}>
-                Add to Cart
+              <button className="btn-outline" onClick={addToCart} disabled={p.stockOut} style={{ width: "100%", padding: 13, borderRadius: 18, fontSize: 14, fontFamily: "'Jost',sans-serif", opacity: p.stockOut ? 0.6 : 1, cursor: p.stockOut ? "not-allowed" : "pointer" }}>
+                {p.stockOut ? "Out of Stock" : "Add to Cart"}
               </button>
             </div>
           </div>
