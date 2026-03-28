@@ -6,6 +6,7 @@ const cors = require("cors");
 const { google } = require("googleapis");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
+const { neon } = require("@neondatabase/serverless");
 
 const app = express();
 
@@ -19,6 +20,9 @@ const SETUP_TTL_MS = 1000 * 60 * 10;
 const ALLOW_2FA_SETUP = String(process.env.ADMIN_ALLOW_2FA_SETUP || "").toLowerCase() === "true";
 const loginChallenges = new Map();
 const setupChallenges = new Map();
+let productsTableReady = false;
+const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || "";
+const db = dbUrl ? neon(dbUrl) : null;
 
 // NOTE: On Vercel, the filesystem is read-only. The admin-2fa.json file
 // cannot be written at runtime. 2FA setup must be done locally or via
@@ -134,6 +138,73 @@ function createSheetsClient() {
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
   return google.sheets({ version: "v4", auth });
+}
+
+async function ensureProductsTable() {
+  if (!db) throw new Error("DATABASE_URL is not configured.");
+  if (productsTableReady) return;
+  await db`
+    CREATE TABLE IF NOT EXISTS products (
+      id BIGINT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      price INTEGER NOT NULL,
+      fabric TEXT,
+      description TEXT,
+      badge TEXT,
+      rating NUMERIC(3,1) NOT NULL DEFAULT 4.8,
+      reviews INTEGER NOT NULL DEFAULT 0,
+      imgs JSONB NOT NULL DEFAULT '[]'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+  await db`CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);`;
+  productsTableReady = true;
+}
+
+function mapProductRow(row) {
+  return {
+    id: Number(row.id),
+    name: row.name || "",
+    category: row.category || "",
+    price: Number(row.price) || 0,
+    fabric: row.fabric || "",
+    desc: row.description || "",
+    badge: row.badge || "New",
+    rating: Number(row.rating) || 4.8,
+    reviews: Number(row.reviews) || 0,
+    imgs: Array.isArray(row.imgs) ? row.imgs : [],
+  };
+}
+
+function normalizeProductInput(body) {
+  const name = String(body?.name || "").trim();
+  const category = String(body?.category || "").trim();
+  const price = Number(body?.price);
+  const fabric = String(body?.fabric || "").trim();
+  const desc = String(body?.desc || "").trim();
+  const badge = String(body?.badge || "New").trim();
+  const rating = Number(body?.rating ?? 4.8);
+  const reviews = Number(body?.reviews ?? 0);
+  const imgs = Array.isArray(body?.imgs) ? body.imgs.filter((img) => String(img || "").trim()) : [];
+
+  if (!name) return { error: "Name is required." };
+  if (!category) return { error: "Category is required." };
+  if (!Number.isFinite(price) || price <= 0) return { error: "Valid price is required." };
+  if (!imgs.length) return { error: "At least one image URL is required." };
+
+  return {
+    name,
+    category,
+    price: Math.round(price),
+    fabric,
+    desc,
+    badge,
+    rating: Number.isFinite(rating) ? rating : 4.8,
+    reviews: Number.isFinite(reviews) ? reviews : 0,
+    imgs,
+  };
 }
 
 app.get("/api/admin/2fa/status", (_req, res) => {
@@ -278,6 +349,116 @@ app.post("/api/orders", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "Failed to save order to Google Sheets.",
+      detail: error?.message || "Unknown error",
+    });
+  }
+});
+
+app.get("/api/products", async (_req, res) => {
+  try {
+    await ensureProductsTable();
+    const rows = await db`SELECT * FROM products ORDER BY created_at ASC;`;
+    return res.json({ ok: true, products: rows.map(mapProductRow) });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: "Failed to fetch products.",
+      detail: error?.message || "Unknown error",
+    });
+  }
+});
+
+app.post("/api/products", async (req, res) => {
+  try {
+    const normalized = normalizeProductInput(req.body || {});
+    if (normalized.error) {
+      return res.status(400).json({ ok: false, error: normalized.error });
+    }
+
+    await ensureProductsTable();
+    const id = Date.now();
+    const rows = await db`
+      INSERT INTO products (id, name, category, price, fabric, description, badge, rating, reviews, imgs)
+      VALUES (
+        ${id},
+        ${normalized.name},
+        ${normalized.category},
+        ${normalized.price},
+        ${normalized.fabric},
+        ${normalized.desc},
+        ${normalized.badge},
+        ${normalized.rating},
+        ${normalized.reviews},
+        ${JSON.stringify(normalized.imgs)}::jsonb
+      )
+      RETURNING *;
+    `;
+    return res.status(201).json({ ok: true, product: mapProductRow(rows[0]) });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: "Failed to create product.",
+      detail: error?.message || "Unknown error",
+    });
+  }
+});
+
+app.put("/api/products/:id", async (req, res) => {
+  try {
+    const normalized = normalizeProductInput(req.body || {});
+    if (normalized.error) {
+      return res.status(400).json({ ok: false, error: normalized.error });
+    }
+
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ ok: false, error: "Invalid product ID." });
+    }
+
+    await ensureProductsTable();
+    const rows = await db`
+      UPDATE products
+      SET
+        name = ${normalized.name},
+        category = ${normalized.category},
+        price = ${normalized.price},
+        fabric = ${normalized.fabric},
+        description = ${normalized.desc},
+        badge = ${normalized.badge},
+        rating = ${normalized.rating},
+        reviews = ${normalized.reviews},
+        imgs = ${JSON.stringify(normalized.imgs)}::jsonb,
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *;
+    `;
+
+    if (!rows.length) {
+      return res.status(404).json({ ok: false, error: "Product not found." });
+    }
+    return res.json({ ok: true, product: mapProductRow(rows[0]) });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: "Failed to update product.",
+      detail: error?.message || "Unknown error",
+    });
+  }
+});
+
+app.delete("/api/products/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ ok: false, error: "Invalid product ID." });
+    }
+    await ensureProductsTable();
+    const rows = await db`DELETE FROM products WHERE id = ${id} RETURNING id;`;
+    return res.json({ ok: true, deletedCount: rows.length });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: "Failed to delete product.",
       detail: error?.message || "Unknown error",
     });
   }
