@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+const API_BASE = (process.env.REACT_APP_API_BASE_URL || "").trim();
 
 export async function saveOrderToSheet(payload) {
   const res = await fetch(`${API_BASE}/api/orders`, {
@@ -13,3 +13,4 @@ export async function saveOrderToSheet(payload) {
   }
   return data;
 }
+
