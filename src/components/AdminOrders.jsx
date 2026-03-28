@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+const API_BASE = (process.env.REACT_APP_API_BASE_URL || "").trim();
 
 const formatOrderDate = (value) => {
   if (!value) return "-";
@@ -128,3 +128,4 @@ export default function AdminOrders({ onBack, onStore }) {
     </div>
   );
 }
+
