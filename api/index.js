@@ -154,12 +154,14 @@ async function ensureProductsTable() {
       badge TEXT,
       rating NUMERIC(3,1) NOT NULL DEFAULT 4.8,
       reviews INTEGER NOT NULL DEFAULT 0,
+      stock_out BOOLEAN NOT NULL DEFAULT FALSE,
       imgs JSONB NOT NULL DEFAULT '[]'::jsonb,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `;
   await db`CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);`;
+  await db`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_out BOOLEAN NOT NULL DEFAULT FALSE;`;
   productsTableReady = true;
 }
 
@@ -174,6 +176,7 @@ function mapProductRow(row) {
     badge: row.badge || "New",
     rating: Number(row.rating) || 4.8,
     reviews: Number(row.reviews) || 0,
+    stockOut: Boolean(row.stock_out),
     imgs: Array.isArray(row.imgs) ? row.imgs : [],
   };
 }
@@ -187,6 +190,7 @@ function normalizeProductInput(body) {
   const badge = String(body?.badge || "New").trim();
   const rating = Number(body?.rating ?? 4.8);
   const reviews = Number(body?.reviews ?? 0);
+  const stockOut = Boolean(body?.stockOut);
   const imgs = Array.isArray(body?.imgs) ? body.imgs.filter((img) => String(img || "").trim()) : [];
 
   if (!name) return { error: "Name is required." };
@@ -203,6 +207,7 @@ function normalizeProductInput(body) {
     badge,
     rating: Number.isFinite(rating) ? rating : 4.8,
     reviews: Number.isFinite(reviews) ? reviews : 0,
+    stockOut,
     imgs,
   };
 }
@@ -357,8 +362,20 @@ app.post("/api/orders", async (req, res) => {
 app.get("/api/products", async (_req, res) => {
   try {
     await ensureProductsTable();
-    const rows = await db`SELECT * FROM products ORDER BY created_at ASC;`;
-    return res.json({ ok: true, products: rows.map(mapProductRow) });
+    const page = Math.max(1, Number(_req.query?.page || 1));
+    const pageSize = Math.min(100, Math.max(1, Number(_req.query?.pageSize || 20)));
+    const offset = (page - 1) * pageSize;
+    const countRows = await db`SELECT COUNT(*)::int AS total FROM products;`;
+    const total = Number(countRows?.[0]?.total || 0);
+    const rows = await db`SELECT * FROM products ORDER BY created_at ASC LIMIT ${pageSize} OFFSET ${offset};`;
+    return res.json({
+      ok: true,
+      products: rows.map(mapProductRow),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    });
   } catch (error) {
     return res.status(500).json({
       ok: false,
@@ -378,7 +395,7 @@ app.post("/api/products", async (req, res) => {
     await ensureProductsTable();
     const id = Date.now();
     const rows = await db`
-      INSERT INTO products (id, name, category, price, fabric, description, badge, rating, reviews, imgs)
+      INSERT INTO products (id, name, category, price, fabric, description, badge, rating, reviews, stock_out, imgs)
       VALUES (
         ${id},
         ${normalized.name},
@@ -389,6 +406,7 @@ app.post("/api/products", async (req, res) => {
         ${normalized.badge},
         ${normalized.rating},
         ${normalized.reviews},
+        ${normalized.stockOut},
         ${JSON.stringify(normalized.imgs)}::jsonb
       )
       RETURNING *;
@@ -427,6 +445,7 @@ app.put("/api/products/:id", async (req, res) => {
         badge = ${normalized.badge},
         rating = ${normalized.rating},
         reviews = ${normalized.reviews},
+        stock_out = ${normalized.stockOut},
         imgs = ${JSON.stringify(normalized.imgs)}::jsonb,
         updated_at = NOW()
       WHERE id = ${id}
