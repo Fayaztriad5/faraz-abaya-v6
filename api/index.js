@@ -149,6 +149,7 @@ async function ensureProductsTable() {
       name TEXT NOT NULL,
       category TEXT NOT NULL,
       price INTEGER NOT NULL,
+      mrp INTEGER,
       fabric TEXT,
       description TEXT,
       badge TEXT,
@@ -162,6 +163,7 @@ async function ensureProductsTable() {
   `;
   await db`CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);`;
   await db`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_out BOOLEAN NOT NULL DEFAULT FALSE;`;
+  await db`ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp INTEGER;`;
   productsTableReady = true;
 }
 
@@ -171,6 +173,7 @@ function mapProductRow(row) {
     name: row.name || "",
     category: row.category || "",
     price: Number(row.price) || 0,
+    mrp: Number(row.mrp) || null,
     fabric: row.fabric || "",
     desc: row.description || "",
     badge: row.badge || "New",
@@ -185,6 +188,8 @@ function normalizeProductInput(body) {
   const name = String(body?.name || "").trim();
   const category = String(body?.category || "").trim();
   const price = Number(body?.price);
+  const mrpRaw = body?.mrp;
+  const mrp = mrpRaw === "" || mrpRaw === null || mrpRaw === undefined ? null : Number(mrpRaw);
   const fabric = String(body?.fabric || "").trim();
   const desc = String(body?.desc || "").trim();
   const badge = String(body?.badge || "New").trim();
@@ -196,12 +201,14 @@ function normalizeProductInput(body) {
   if (!name) return { error: "Name is required." };
   if (!category) return { error: "Category is required." };
   if (!Number.isFinite(price) || price <= 0) return { error: "Valid price is required." };
+  if (mrp !== null && (!Number.isFinite(mrp) || mrp < price)) return { error: "MRP must be greater than or equal to price." };
   if (!imgs.length) return { error: "At least one image URL is required." };
 
   return {
     name,
     category,
     price: Math.round(price),
+    mrp: mrp === null ? null : Math.round(mrp),
     fabric,
     desc,
     badge,
@@ -395,12 +402,13 @@ app.post("/api/products", async (req, res) => {
     await ensureProductsTable();
     const id = Date.now();
     const rows = await db`
-      INSERT INTO products (id, name, category, price, fabric, description, badge, rating, reviews, stock_out, imgs)
+      INSERT INTO products (id, name, category, price, mrp, fabric, description, badge, rating, reviews, stock_out, imgs)
       VALUES (
         ${id},
         ${normalized.name},
         ${normalized.category},
         ${normalized.price},
+        ${normalized.mrp},
         ${normalized.fabric},
         ${normalized.desc},
         ${normalized.badge},
@@ -440,6 +448,7 @@ app.put("/api/products/:id", async (req, res) => {
         name = ${normalized.name},
         category = ${normalized.category},
         price = ${normalized.price},
+        mrp = ${normalized.mrp},
         fabric = ${normalized.fabric},
         description = ${normalized.desc},
         badge = ${normalized.badge},
