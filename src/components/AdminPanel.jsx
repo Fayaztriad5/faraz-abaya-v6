@@ -40,6 +40,7 @@ export default function AdminPanel({ products, loading = false, setProducts, pag
     name: "",
     category: "Daily Wear",
     price: "",
+    mrp: "",
     fabric: "",
     desc: "",
     imgUrl1: "",
@@ -70,6 +71,7 @@ export default function AdminPanel({ products, loading = false, setProducts, pag
       name: "",
       category: "Daily Wear",
       price: "",
+      mrp: "",
       fabric: "",
       desc: "",
       imgUrl1: "",
@@ -90,6 +92,7 @@ export default function AdminPanel({ products, loading = false, setProducts, pag
       name: p.name,
       category: p.category,
       price: p.price,
+      mrp: p.mrp || "",
       fabric: p.fabric,
       desc: p.desc,
       imgUrl1: imgs[0] || main,
@@ -115,6 +118,7 @@ export default function AdminPanel({ products, loading = false, setProducts, pag
       name: form.name,
       category: form.category,
       price: +form.price,
+      mrp: form.mrp === "" ? null : +form.mrp,
       fabric: form.fabric,
       desc: form.desc,
       badge: form.badge,
@@ -306,7 +310,7 @@ export default function AdminPanel({ products, loading = false, setProducts, pag
               <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--text-muted)" }}>&times;</button>
             </div>
             <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
-              {[["Product Name *", "name", "text", "e.g., Nida Pearl Abaya"], ["Price (\u20B9) *", "price", "number", "e.g., 1999"], ["Fabric", "fabric", "text", "e.g., Premium Nida"]].map(([lbl, key, type, ph]) => (
+              {[["Product Name *", "name", "text", "e.g., Nida Pearl Abaya"], ["Price (\u20B9) *", "price", "number", "e.g., 1450"], ["MRP (\u20B9)", "mrp", "number", "e.g., 1999"], ["Fabric", "fabric", "text", "e.g., Premium Nida"]].map(([lbl, key, type, ph]) => (
                 <div key={key}>
                   <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--charcoal)", fontFamily: "'Jost',sans-serif", display: "block", marginBottom: 6 }}>{lbl}</label>
                   <input
