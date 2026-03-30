@@ -72,6 +72,11 @@ export default function ProductCard({ p, onView, prioritize = false }) {
         {/* Price + CTA */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
           <div>
+            {Number(p.mrp) > Number(p.price) && (
+              <div style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "line-through", fontFamily: "'Jost',sans-serif", marginBottom: 2 }}>
+                ₹{Number(p.mrp).toLocaleString()}
+              </div>
+            )}
             <span className="font-display card-price" style={{ fontWeight: 600, color: "var(--charcoal)" }}>₹{p.price.toLocaleString()}</span>
             <div style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'Jost',sans-serif" }}>{p.fabric}</div>
           </div>
