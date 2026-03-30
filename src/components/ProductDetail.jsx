@@ -149,6 +149,11 @@ export default function ProductDetail({ p, onBack }) {
 
           <div className="divider" />
 
+          {Number(p.mrp) > Number(p.price) && (
+            <div style={{ fontSize: 14, color: "var(--text-muted)", textDecoration: "line-through", fontFamily: "'Jost',sans-serif", marginBottom: 4 }}>
+              {"\u20B9"}{Number(p.mrp).toLocaleString()}
+            </div>
+          )}
           <div className="font-display detail-price" style={{ fontWeight: 600, color: "var(--charcoal)", marginBottom: 4 }}>{"\u20B9"}{p.price.toLocaleString()}</div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "'Jost',sans-serif", marginBottom: 16 }}>Inclusive of all taxes</div>
 
