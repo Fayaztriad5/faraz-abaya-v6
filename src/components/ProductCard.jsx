@@ -12,6 +12,18 @@ const Stars = ({ r }) => (
   </span>
 );
 
+const HeartIcon = ({ filled }) => (
+  <svg viewBox="0 0 24 24" style={{ width: 17, height: 17 }} aria-hidden="true">
+    <path
+      d="M12 20.5l-1.3-1.2C5.5 14.6 2 11.4 2 7.5 2 4.4 4.4 2 7.5 2c1.8 0 3.5.8 4.5 2.1C13 2.8 14.7 2 16.5 2 19.6 2 22 4.4 22 7.5c0 3.9-3.5 7.1-8.7 11.8L12 20.5z"
+      fill={filled ? "#9B1C1C" : "none"}
+      stroke={filled ? "#9B1C1C" : "#7A5A10"}
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export default function ProductCard({ p, onView, prioritize = false }) {
   const [liked, setLiked] = useState(false);
   const [bc, tc] = BADGE_COLORS[p.badge] || ["#C9A84C", "#1C1C1E"];
@@ -29,7 +41,7 @@ export default function ProductCard({ p, onView, prioritize = false }) {
     `${src.split("?")[0]}?auto=format&fit=crop&crop=faces,entropy&w=${w}&h=${Math.round((w * 4) / 3)}&q=60`;
 
   return (
-    <div className="card-hover" style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.07)" }}>
+    <div className="card-hover" style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.07)", display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Image */}
       <div className="img-zoom" style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden" }}>
         <img
@@ -54,36 +66,36 @@ export default function ProductCard({ p, onView, prioritize = false }) {
           </div>
         )}
         <button className="like-btn" onClick={() => setLiked(!liked)} aria-label="Wishlist">
-          <span style={{ fontSize: 14 }}>{liked ? "❤️" : "🤍"}</span>
+          <HeartIcon filled={liked} />
         </button>
       </div>
 
       {/* Info */}
-      <div style={{ padding: "10px 12px 12px" }}>
+      <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
         <div style={{ fontSize: 10, color: "var(--gold-strong)", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", fontFamily: "'Jost',sans-serif" }}>{p.category}</div>
 
-        <div className="font-display card-name" style={{ fontWeight: 600, color: "var(--charcoal)", marginTop: 2, lineHeight: 1.2 }}>{p.name}</div>
+        <div className="font-display card-name" style={{ fontWeight: 600, color: "var(--charcoal)", marginTop: 3, lineHeight: 1.28, minHeight: "2.56em" }}>{p.name}</div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 4, margin: "5px 0 8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, margin: "6px 0 10px" }}>
           <Stars r={p.rating} />
-          <span style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'Jost',sans-serif" }}>({p.reviews})</span>
+          <span style={{ fontSize: 12, color: "#4A4E54", fontFamily: "'Jost',sans-serif", fontWeight: 500 }}>({p.reviews})</span>
         </div>
 
         {/* Price + CTA */}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
           <div>
             {Number(p.mrp) > Number(p.price) && (
-              <div style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "line-through", fontFamily: "'Jost',sans-serif", marginBottom: 2 }}>
+              <div className="font-display card-price" style={{ color: "#B22222", fontWeight: 700, textDecoration: "line-through", marginBottom: 2 }}>
                 ₹{Number(p.mrp).toLocaleString()}
               </div>
             )}
             <span className="font-display card-price" style={{ fontWeight: 600, color: "var(--charcoal)" }}>₹{p.price.toLocaleString()}</span>
-            <div style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'Jost',sans-serif" }}>{p.fabric}</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'Jost',sans-serif", marginTop: 2 }}>{p.fabric}</div>
           </div>
         </div>
 
-        {/* Full-width button on all sizes — cleaner on mobile */}
-        <div style={{ display: "grid", gap: 8 }}>
+        {/* Full-width button on all sizes - cleaner on mobile */}
+        <div style={{ display: "grid", gap: 9, marginTop: "auto", paddingTop: 10 }}>
           <button className="btn-gold btn-card-view" onClick={() => onView(p)}>
             View Details
           </button>
