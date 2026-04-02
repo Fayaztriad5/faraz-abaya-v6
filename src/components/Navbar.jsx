@@ -84,36 +84,7 @@ export default function Navbar({ onNav, search, setSearch, cat, setCat }) {
 
           {/* Desktop Nav (>= 640px) */}
           <div className="nav-desktop" style={{ alignItems: "center", gap: 24 }}>
-            {/* Category dropdown */}
-            <div
-              ref={dropdownRef}
-              style={{ position: "relative", paddingBottom: 10 }}
-              onMouseEnter={openDesktopDropdown}
-              onMouseLeave={scheduleDesktopClose}
-            >
-              <button
-                onClick={() => setDropOpen((v) => !v)}
-                style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost',sans-serif", fontSize: 14, fontWeight: 500, color: "var(--charcoal)" }}
-              >
-                Collections <span style={{ fontSize: 10 }}>v</span>
-              </button>
-              {dropOpen && (
-                <div
-                  onMouseEnter={openDesktopDropdown}
-                  onMouseLeave={scheduleDesktopClose}
-                  style={{ position: "absolute", top: "calc(100% - 2px)", left: "50%", transform: "translateX(-50%)", background: "#fff", borderRadius: 14, boxShadow: "0 8px 40px rgba(0,0,0,0.13)", border: "1px solid rgba(201,168,76,.2)", padding: "6px 0", minWidth: 160, zIndex: 100 }}
-                >
-                  {CATS.map(c => (
-                    <button key={c} onClick={() => { setCat(c); setDropOpen(false); onNav("home"); }}
-                      style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 18px", background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost',sans-serif", fontSize: 13, color: cat === c ? "var(--gold)" : "var(--charcoal)", fontWeight: cat === c ? 600 : 400 }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#FFF8EC"}
-                      onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Collections dropdown hidden for now */}
 
             {/* Search */}
             <div style={{ position: "relative" }}>
