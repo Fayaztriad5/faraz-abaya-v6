@@ -35,7 +35,7 @@ export default function ProductDetail({ p, onBack }) {
   const rawImages = Array.isArray(p?.imgs) ? p.imgs.filter(Boolean) : [];
   const dedupedImages = [...new Set(rawImages)];
   const mainImage = dedupedImages[0] || fallbackImage;
-  const relevantImages = dedupedImages.slice(1);
+  const galleryImages = dedupedImages;
   const displayImage = activeImg || mainImage;
 
   useEffect(() => {
@@ -112,17 +112,17 @@ export default function ProductDetail({ p, onBack }) {
             <img src={displayImage} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "all .5s", filter: p.stockOut ? "grayscale(20%) blur(1.2px)" : "none", opacity: p.stockOut ? 0.78 : 1 }} />
           </div>
 
-          {relevantImages.length === 1 && (
+          {galleryImages.length === 1 && (
             <div style={{ marginTop: 8 }}>
-              <div className={`thumb ${displayImage === relevantImages[0] ? "active" : ""}`} onClick={() => setActiveImg(relevantImages[0])} style={{ width: 84, height: 108, overflow: "hidden", borderRadius: 10 }}>
-                <img src={relevantImages[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <div className={`thumb ${displayImage === galleryImages[0] ? "active" : ""}`} onClick={() => setActiveImg(galleryImages[0])} style={{ width: 84, height: 108, overflow: "hidden", borderRadius: 10 }}>
+                <img src={galleryImages[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             </div>
           )}
 
-          {relevantImages.length > 1 && (
-            <div style={{ display: "inline-grid", gridTemplateColumns: `repeat(${Math.min(relevantImages.length, 3)}, minmax(120px, 160px))`, gap: 8, padding: 8, border: "1px solid rgba(201,168,76,.2)", borderRadius: 14, background: "#fff" }}>
-              {relevantImages.map((src, i) => (
+          {galleryImages.length > 1 && (
+            <div style={{ display: "inline-grid", gridTemplateColumns: `repeat(${Math.min(galleryImages.length, 3)}, minmax(120px, 160px))`, gap: 8, padding: 8, border: "1px solid rgba(201,168,76,.2)", borderRadius: 14, background: "#fff" }}>
+              {galleryImages.map((src, i) => (
                 <div key={i} className={`thumb ${displayImage === src ? "active" : ""}`} onClick={() => setActiveImg(src)} style={{ aspectRatio: "3/4", minHeight: 120, overflow: "hidden", borderRadius: 10 }}>
                   <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
@@ -150,7 +150,7 @@ export default function ProductDetail({ p, onBack }) {
           <div className="divider" />
 
           {Number(p.mrp) > Number(p.price) && (
-            <div style={{ fontSize: 14, color: "var(--text-muted)", textDecoration: "line-through", fontFamily: "'Jost',sans-serif", marginBottom: 4 }}>
+            <div style={{ fontSize: 14, color: "#B22222", fontWeight: 700, textDecoration: "line-through", fontFamily: "'Jost',sans-serif", marginBottom: 4 }}>
               {"\u20B9"}{Number(p.mrp).toLocaleString()}
             </div>
           )}
